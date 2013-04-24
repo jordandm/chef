@@ -111,30 +111,36 @@ class Chef
           resource_history_url = "reports/nodes/#{node.name}/runs"
           server_response = @rest_client.post_rest(resource_history_url, {:action => :begin, :run_id => @run_id})
         rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
-          message = "Reporting error beginning run. URL: #{resource_history_url} "
-          if !e.response || e.response.code.to_s != "404"
-            code = if e.response.code
-                     e.response.code
-                   else
-                     "Exception Code Empty"
-                   end
-            exception = "Exception: #{code} "
-            if Chef::Config[:enable_reporting_url_fatals]
-              reporting_status = "Reporting fatals enabled. Aborting run. "
-              Chef::Log.error(message + exception + reporting_status)
-              raise
-            else
-              reporting_status = "Disabling reporting for run."
-              Chef::Log.info(message + exception + reporting_status)
-            end
-          else
-            reason = "Received 404. "
-            reporting_status = "Disabling reporting for run."
-            Chef::Log.debug(message + reason + reporting_status)
-          end
-          @reporting_enabled = false
+          handle_error_beginning_run(e, resource_history_url)
         end
       end
+    end
+
+    def handle_error_beginning_run(e, url)
+      message = "Reporting error beginning run. URL: #{url} "
+      code = if e.response.code
+               e.response.code.to_s
+             else
+               "Exception Code Empty"
+             end
+
+      if !e.response || (code != "404" && code != "406")
+        exception = "Exception: #{code} "
+        if Chef::Config[:enable_reporting_url_fatals]
+          reporting_status = "Reporting fatals enabled. Aborting run. "
+          Chef::Log.error(message + exception + reporting_status)
+          raise
+        else
+          reporting_status = "Disabling reporting for run."
+          Chef::Log.info(message + exception + reporting_status)
+        end
+      else
+        reason = "Received #{code}. "
+        reporting_status = "Disabling reporting for run."
+        Chef::Log.debug(message + reason + reporting_status)
+      end
+
+      @reporting_enabled = false
     end
 
     def resource_current_state_loaded(new_resource, action, current_resource)
