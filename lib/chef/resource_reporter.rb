@@ -98,7 +98,7 @@ class Chef
       @pending_update  = nil
       @status = "success"
       @exception = nil
-      @run_id = nil
+      @run_id = UUIDTools::UUID.random_create.to_s # Ensure the uuid is a string so the json encoding never tries to encode the uuid object
       @rest_client = rest_client
       @node = nil
       @error_descriptions = {}
@@ -108,9 +108,8 @@ class Chef
       @node = node
       if reporting_enabled?
         begin
-          @run_id = UUIDTools::UUID.random_create.to_s # Ensure the uuid is a string so the json encoding never tries to encode the uuid object
           resource_history_url = "reports/nodes/#{node.name}/runs"
-          server_response = @rest_client.post_rest(resource_history_url, {"action" => "begin", "run_id" => @run_id})
+          server_response = @rest_client.post_rest(resource_history_url, {:action => :begin, :run_id => @run_id})
         rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
           message = "Reporting error beginning run. URL: #{resource_history_url} "
           if !e.response || e.response.code.to_s != "404"
