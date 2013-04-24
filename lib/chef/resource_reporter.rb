@@ -136,8 +136,13 @@ class Chef
         end
       else
         reason = "Received #{code}. "
-        reporting_status = "Disabling reporting for run."
-        Chef::Log.debug(message + reason + reporting_status)
+        if code == "406"
+          reporting_status = "Client version not supported. Please update the client. Disabling reporting for run."
+          Chef::Log.info(message + reason + reporting_status)
+        else
+          reporting_status = "Disabling reporting for run."
+          Chef::Log.debug(message + reason + reporting_status)
+        end
       end
 
       @reporting_enabled = false
