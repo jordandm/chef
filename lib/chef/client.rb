@@ -132,7 +132,7 @@ class Chef
     attr_reader :json_attribs
     attr_reader :run_status
     attr_reader :events
-    
+
     # Creates a new Chef::Client.
     def initialize(json_attribs=nil, args={})
       @json_attribs = json_attribs
@@ -180,7 +180,7 @@ class Chef
     # Do a full run for this Chef::Client.  Calls:
     # * do_run
     #
-    # This provides a wrapper around #do_run allowing the 
+    # This provides a wrapper around #do_run allowing the
     # run to be optionally forked.
     # === Returns
     # boolean:: Return value from #do_run. Should always returns true.
@@ -353,8 +353,7 @@ class Chef
         @events.registration_completed
       end
       # We now have the client key, and should use it from now on.
-      options  =  {:headers => {'X-Ops-Reporting-Protocol-Version' => Chef::ResourceReporter::PROTOCOL_VERSION}}
-      @rest = Chef::REST.new(config[:chef_server_url], client_name, config[:client_key], options)
+      @rest = Chef::REST.new(config[:chef_server_url], client_name, config[:client_key])
       @resource_reporter = Chef::ResourceReporter.new(@rest)
       @events.register(@resource_reporter)
     rescue Exception => e

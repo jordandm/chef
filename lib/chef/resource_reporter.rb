@@ -104,12 +104,17 @@ class Chef
       @error_descriptions = {}
     end
 
+    def headers(additional_headers = {})
+      options = {'X-Ops-Reporting-Protocol-Version' => PROTOCOL_VERSION}
+      options.merge(additional_headers)
+    end
+
     def node_load_completed(node, expanded_run_list_with_versions, config)
       @node = node
       if reporting_enabled?
         begin
           resource_history_url = "reports/nodes/#{node.name}/runs"
-          server_response = @rest_client.post_rest(resource_history_url, {:action => :begin, :run_id => @run_id})
+          server_response = @rest_client.post_rest(resource_history_url, {:action => :begin, :run_id => @run_id}, headers)
         rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
           handle_error_beginning_run(e, resource_history_url)
         end
@@ -208,7 +213,7 @@ class Chef
           Chef::Log.debug("Sending compressed run data...")
           # Since we're posting compressed data we can not directly call post_rest which expects JSON
           reporting_url = @rest_client.create_url(resource_history_url)
-          @rest_client.raw_http_request(:POST, reporting_url, {'Content-Encoding' => 'gzip'}, compressed_data)
+          @rest_client.raw_http_request(:POST, reporting_url, headers({'Content-Encoding' => 'gzip'}), compressed_data)
         rescue Net::HTTPServerException => e
           if e.response.code.to_s == "400"
             Chef::FileCache.store("failed-reporting-data.json", Chef::JSONCompat.to_json_pretty(run_data), 0640)
