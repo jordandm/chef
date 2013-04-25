@@ -208,7 +208,11 @@ class Chef
     def run_failed(exception)
       @exception = exception
       @status = "failure"
-      post_reporting_data
+      # If we haven't had the node setup yet, there's not much we can do
+      # in terms of reporting
+      if @node
+          post_reporting_data
+      end
     end
 
     def post_reporting_data
